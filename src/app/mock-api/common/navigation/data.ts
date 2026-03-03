@@ -1,39 +1,155 @@
 /* eslint-disable */
-import { FuseNavigationItem } from '@fuse/components/navigation';
+import { AppNavigationItem } from 'app/core/navigation/app-navigation-item';
 
-export const defaultNavigation: FuseNavigationItem[] = [
+export const defaultNavigation: AppNavigationItem[] = [
     {
-        id   : 'example',
-        title: 'Example',
-        type : 'basic',
-        icon : 'heroicons_outline:chart-pie',
-        link : '/example'
+        id: 'empresas',
+        title: 'Empresas',
+        type: 'basic',
+        icon: 'heroicons_outline:chart-pie',
+        link: '/empresas'
+    },
+
+    {
+        id: 'modulos',
+        title: 'Módulos',
+        type: 'basic',
+        icon: 'heroicons_outline:chart-pie',
+        link: '/modulos'
+    },
+    {
+        id: 'permisos',
+        title: 'Permisos',
+        type: 'basic',
+        icon: 'heroicons_outline:chart-pie',
+        link: '/permisos'
+    },
+    {
+        id: 'roles',
+        title: 'Roles',
+        type: 'basic',
+        icon: 'heroicons_outline:chart-pie',
+        link: '/roles'
+    },
+    {
+        id: 'usuarios',
+        title: 'Usuarios',
+        type: 'basic',
+        icon: 'heroicons_outline:chart-pie',
+        link: '/usuarios'
     }
 ];
-export const compactNavigation: FuseNavigationItem[] = [
+export const compactNavigation: AppNavigationItem[] = [
     {
-        id   : 'example',
-        title: 'Example',
-        type : 'basic',
-        icon : 'heroicons_outline:chart-pie',
-        link : '/example'
+        id: 'empresas',
+        title: 'Empresas',
+        type: 'basic',
+        icon: 'heroicons_outline:chart-pie',
+        link: '/empresas'
+    },
+
+    {
+        id: 'modulos',
+        title: 'Módulos',
+        type: 'basic',
+        icon: 'heroicons_outline:chart-pie',
+        link: '/modulos'
+    },
+    {
+        id: 'permisos',
+        title: 'Permisos',
+        type: 'basic',
+        icon: 'heroicons_outline:chart-pie',
+        link: '/permisos'
+    },
+    {
+        id: 'roles',
+        title: 'Roles',
+        type: 'basic',
+        icon: 'heroicons_outline:chart-pie',
+        link: '/roles'
+    },
+    {
+        id: 'usuarios',
+        title: 'Usuarios',
+        type: 'basic',
+        icon: 'heroicons_outline:chart-pie',
+        link: '/usuarios'
     }
 ];
-export const futuristicNavigation: FuseNavigationItem[] = [
+export const futuristicNavigation: AppNavigationItem[] = [
     {
-        id   : 'example',
-        title: 'Example',
-        type : 'basic',
-        icon : 'heroicons_outline:chart-pie',
-        link : '/example'
+        id: 'empresas',
+        title: 'Empresas',
+        type: 'basic',
+        icon: 'heroicons_outline:chart-pie',
+        link: '/empresas'
+    },
+
+    {
+        id: 'modulos',
+        title: 'Módulos',
+        type: 'basic',
+        icon: 'heroicons_outline:chart-pie',
+        link: '/modulos'
+    },
+    {
+        id: 'permisos',
+        title: 'Permisos',
+        type: 'basic',
+        icon: 'heroicons_outline:chart-pie',
+        link: '/permisos'
+    },
+    {
+        id: 'roles',
+        title: 'Roles',
+        type: 'basic',
+        icon: 'heroicons_outline:chart-pie',
+        link: '/roles'
+    },
+    {
+        id: 'usuarios',
+        title: 'Usuarios',
+        type: 'basic',
+        icon: 'heroicons_outline:chart-pie',
+        link: '/usuarios'
     }
 ];
-export const horizontalNavigation: FuseNavigationItem[] = [
+export const horizontalNavigation: AppNavigationItem[] = [
     {
-        id   : 'example',
-        title: 'Example',
-        type : 'basic',
-        icon : 'heroicons_outline:chart-pie',
-        link : '/example'
+        id: 'empresas',
+        title: 'Empresas',
+        type: 'basic',
+        icon: 'heroicons_outline:chart-pie',
+        link: '/empresas'
+    },
+
+    {
+        id: 'modulos',
+        title: 'Módulos',
+        type: 'basic',
+        icon: 'heroicons_outline:chart-pie',
+        link: '/modulos'
+    },
+    {
+        id: 'permisos',
+        title: 'Permisos',
+        type: 'basic',
+        icon: 'heroicons_outline:chart-pie',
+        link: '/permisos'
+    },
+    {
+        id: 'roles',
+        title: 'Roles',
+        type: 'basic',
+        icon: 'heroicons_outline:chart-pie',
+        link: '/roles'
+    },
+    {
+        id: 'usuarios',
+        title: 'Usuarios',
+        type: 'basic',
+        icon: 'heroicons_outline:chart-pie',
+        link: '/usuarios'
     }
 ];

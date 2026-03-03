@@ -34,4 +34,7 @@ export class NavigationService {
             })
         );
     }
+    setNavigation(navigation: any): void {
+    this._navigation.next(navigation);
+}
 }

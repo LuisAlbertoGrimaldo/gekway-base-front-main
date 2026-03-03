@@ -1,0 +1,41 @@
+<h2 mat-dialog-title>{{ isEditMode ? 'Editar Rol' : 'Alta Rol' }}</h2>
+
+<div mat-dialog-content>
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+    <!-- Nombre del rol -->
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Nombre del Rol</mat-label>
+      <input matInput formControlName="nombre" required />
+
+      <!-- Mostrar solo un error a la vez -->
+      <mat-error *ngIf="form.get('nombre')?.hasError('required')">
+        El nombre es obligatorio
+      </mat-error>
+      <mat-error *ngIf="!form.get('nombre')?.hasError('required') && form.get('nombre')?.hasError('whitespace')">
+        El nombre no puede ser solo espacios
+      </mat-error>
+      <mat-error *ngIf="!form.get('nombre')?.hasError('required') && form.get('nombre')?.hasError('invalidChars')">
+        El nombre solo puede contener letras y espacios
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Descripción del rol -->
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Descripción</mat-label>
+      <textarea matInput formControlName="descripcion"></textarea>
+      <mat-error *ngIf="form.get('descripcion')?.hasError('whitespace')">
+        La descripción no puede ser solo espacios
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Botones -->
+    <div class="flex items-center justify-end gap-x-3 mt-6">
+      <button mat-stroked-button color="primary" type="button" (click)="cancelar()">
+        Cancelar
+      </button>
+      <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid">
+        Guardar
+      </button>
+    </div>
+  </form>
+</div>

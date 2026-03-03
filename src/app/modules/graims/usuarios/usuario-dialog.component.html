@@ -1,0 +1,73 @@
+<h2 mat-dialog-title>{{ isEditMode ? 'Editar Usuario' : 'Alta Usuario' }}</h2>
+
+<div mat-dialog-content>
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+    <!-- Nombre del usuario -->
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Nombre</mat-label>
+      <input matInput formControlName="nombre" required />
+      <mat-error *ngIf="form.get('nombre')?.hasError('required')">
+        El nombre es obligatorio
+      </mat-error>
+      <mat-error *ngIf="!form.get('nombre')?.hasError('required') && form.get('nombre')?.hasError('whitespace')">
+        El nombre no puede ser solo espacios
+      </mat-error>
+      <mat-error *ngIf="!form.get('nombre')?.hasError('required') && form.get('nombre')?.hasError('invalidChars')">
+        El nombre solo puede contener letras y espacios
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Correo -->
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Correo electrónico</mat-label>
+      <input matInput formControlName="correo" required email />
+      <mat-error *ngIf="form.get('correo')?.hasError('required')">El correo es obligatorio</mat-error>
+      <mat-error *ngIf="form.get('correo')?.hasError('email')">El correo no es válido</mat-error>
+    </mat-form-field>
+
+    <!-- Teléfono móvil -->
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Teléfono móvil</mat-label>
+      <input matInput formControlName="telefonoMovil" />
+    </mat-form-field>
+
+    <!-- Teléfono fijo -->
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Teléfono fijo</mat-label>
+      <input matInput formControlName="telefonoFijo" />
+    </mat-form-field>
+
+    <!-- Estado -->
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Estado</mat-label>
+      <mat-select formControlName="estado">
+        <mat-option [value]="true">Activo</mat-option>
+        <mat-option [value]="false">Inactivo</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Verificado -->
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Verificado</mat-label>
+      <mat-select formControlName="verificado">
+        <mat-option [value]="true">Sí</mat-option>
+        <mat-option [value]="false">No</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Es super admin -->
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Super Administrador</mat-label>
+      <mat-select formControlName="esSuperAdmin">
+        <mat-option [value]="true">Sí</mat-option>
+        <mat-option [value]="false">No</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Botones -->
+    <div class="flex items-center justify-end gap-x-3 mt-6">
+      <button mat-stroked-button color="primary" type="button" (click)="cancelar()">Cancelar</button>
+      <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid">Guardar</button>
+    </div>
+  </form>
+</div>

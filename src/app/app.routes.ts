@@ -3,6 +3,7 @@ import { initialDataResolver } from 'app/app.resolvers';
 import { AuthGuard } from 'app/core/auth/guards/auth.guard';
 import { NoAuthGuard } from 'app/core/auth/guards/noAuth.guard';
 import { LayoutComponent } from 'app/layout/layout.component';
+import { PermissionGuard } from './core/auth/guards/permission.guard';
 
 // @formatter:off
 /* eslint-disable max-len */
@@ -74,7 +75,41 @@ export const appRoutes: Route[] = [
             initialData: initialDataResolver
         },
         children: [
-            {path: 'example', loadChildren: () => import('app/modules/admin/example/example.routes')},
+             {
+                path: 'empresas',
+                canActivate: [PermissionGuard],
+                data: { permission: 'empresa.view' },
+                loadChildren: () =>
+                    import('app/modules/graims/empresas/empresas.routes').then(m => m.empresasRoutes)
+            },
+              {
+                path: 'modulos',
+                canActivate: [PermissionGuard],
+                data: { permission: 'modulo.view' },
+                loadChildren: () =>
+                    import('app/modules/graims/modulos/modulos.routes').then(m => m.modulosRoutes)
+            },
+              {
+                path: 'permisos',
+                canActivate: [PermissionGuard],
+                data: { permission: 'permiso.view' },
+                loadChildren: () =>
+                    import('app/modules/graims/permisos/permisos.routes').then(m => m.permisosRoutes)
+            },
+             {
+                path: 'roles',
+                canActivate: [PermissionGuard],
+                data: { permission: 'rol.view' },
+                loadChildren: () =>
+                    import('app/modules/graims/roles/roles.routes').then(m => m.rolesRoutes)
+            },
+             {
+                path: 'usuarios',
+                canActivate: [PermissionGuard],
+                data: { permission: 'usuario.view' },
+                loadChildren: () =>
+                    import('app/modules/graims/usuarios/usuarios.routes').then(m => m.usuariosRoutes)
+            }
         ]
     }
 ];
