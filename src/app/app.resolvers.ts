@@ -3,20 +3,28 @@ import { forkJoin, map } from 'rxjs';
 
 import { NavigationService } from 'app/core/navigation/navigation.service';
 import { NavigationFilterService } from 'app/core/navigation/navigation-filter.service';
-import { defaultNavigation } from 'app/mock-api/common/navigation/data';
 
 import { MessagesService } from 'app/layout/common/messages/messages.service';
 import { NotificationsService } from 'app/layout/common/notifications/notifications.service';
 import { QuickChatService } from 'app/layout/common/quick-chat/quick-chat.service';
 import { ShortcutsService } from 'app/layout/common/shortcuts/shortcuts.service';
 
+import { NavigationBuilderService } from 'app/core/navigation/navigation-builder.service';
+import { PermissionService } from 'app/core/auth/permission.service';
+
 export const initialDataResolver = () => {
+
     const messagesService = inject(MessagesService);
     const navigationService = inject(NavigationService);
     const notificationsService = inject(NotificationsService);
     const quickChatService = inject(QuickChatService);
     const shortcutsService = inject(ShortcutsService);
-    const navFilter = inject(NavigationFilterService);
+
+    // 🔥 INYECTAR EL BUILDER
+    const navigationBuilder = inject(NavigationBuilderService);
+
+    const permissionService = inject(PermissionService);
+    permissionService.cargarSesion();
 
     return forkJoin([
         messagesService.getAll(),
@@ -26,15 +34,13 @@ export const initialDataResolver = () => {
     ]).pipe(
         map(([messages, notifications, chats, shortcuts]) => {
 
-            // 🔥 filtrar navegación por permisos
-            const filteredNavigation = navFilter.filterNavigation(defaultNavigation);
+            const navigation = navigationBuilder.buildNavigation();
 
-            // 🔥 inyectar navegación al NavigationService
             navigationService.setNavigation({
-                default: filteredNavigation,
-                compact: filteredNavigation,
-                futuristic: filteredNavigation,
-                horizontal: filteredNavigation
+                default: navigation,
+                compact: navigation,
+                futuristic: navigation,
+                horizontal: navigation
             });
 
             return {

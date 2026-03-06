@@ -13,6 +13,7 @@ export interface AppNavigationItem extends FuseNavigationItem {
   // 🔥 NUEVO
   permission?: string;
   module?: string;
+  
 
   children?: AppNavigationItem[];
 }

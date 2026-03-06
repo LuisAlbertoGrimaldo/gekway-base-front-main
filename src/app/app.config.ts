@@ -1,4 +1,4 @@
-import { provideHttpClient,withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
     ApplicationConfig,
     inject,
@@ -18,11 +18,15 @@ import { MockApiService } from 'app/mock-api';
 import { firstValueFrom } from 'rxjs';
 import { TranslocoHttpLoader } from './core/transloco/transloco.http-loader';
 import { authInterceptor } from 'app/core/auth/auth.interceptor';
+import { empresaInterceptor } from 'app/core/auth/empresa.interceptor';
 export const appConfig: ApplicationConfig = {
     providers: [
         provideAnimations(),
-         provideHttpClient(
-            withInterceptors([authInterceptor])
+        provideHttpClient(
+            withInterceptors([
+                authInterceptor
+               // empresaInterceptor // solo si se pcupa mandar empresa en el header, si no, se puede omitir
+            ])
         ),
         provideRouter(
             appRoutes,

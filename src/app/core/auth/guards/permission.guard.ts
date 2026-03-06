@@ -1,44 +1,79 @@
-import { inject } from '@angular/core';
-import { CanActivateFn, ActivatedRouteSnapshot, Router } from '@angular/router';
-import { PermissionService } from '../permission.service';
+import { Injectable, inject } from '@angular/core';
+import { ActivatedRouteSnapshot, CanActivate, Router } from '@angular/router';
+import { map, take } from 'rxjs/operators';
+
 import { UserService } from 'app/core/user/user.service';
-import { map, take, filter } from 'rxjs/operators';
 
-export const PermissionGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
-  const permService = inject(PermissionService);
-  const userService = inject(UserService);
-  const router = inject(Router);
+@Injectable({ providedIn: 'root' })
+export class PermissionGuard implements CanActivate {
 
-  const requiredPermission = route.data?.['permission'];
-  const requiredModule = route.data?.['module'];
+    private _userService = inject(UserService);
+    private _router = inject(Router);
 
-  // Si la ruta no requiere nada → pasa
-  if (!requiredPermission && !requiredModule) return true;
+    canActivate(route: ActivatedRouteSnapshot) {
 
-  return userService.user$.pipe(
-    // 🔥 esperar usuario real (evita carreras)
-    filter(user => !!user),
-    take(1),
-    map(() => {
+        const requiredPermission = route.data?.['permission'];
+        const requiredRole = route.data?.['role'];
 
-      // 🧠 SUPER ADMIN bypass total
-      if (permService.isSuperAdmin()) {
-        return true;
-      }
+        return this._userService.user$.pipe(
+            take(1),
+            map((user: any) => {
 
-      // 🧩 validar módulo primero
-      if (requiredModule && !permService.hasModule(requiredModule)) {
-        console.warn('⛔ módulo no activo:', requiredModule);
-        return router.parseUrl('/sin-acceso');
-      }
+                if (!user) {
+                    this._router.navigate(['/sign-in']);
+                    return false;
+                }
 
-      // 🔐 validar permiso
-      if (requiredPermission && !permService.has(requiredPermission)) {
-        console.warn('⛔ permiso denegado:', requiredPermission);
-        return router.parseUrl('/sin-acceso');
-      }
+                // 🔥 SUPER ADMIN SIEMPRE PASA
+                if (user.superAdmin) {
+                    return true;
+                }
 
-      return true;
-    })
-  );
-};
+                // --------------------------
+                // VALIDAR PERMISOS
+                // --------------------------
+
+                if (requiredPermission) {
+
+                    const permissions = Array.isArray(requiredPermission)
+                        ? requiredPermission
+                        : [requiredPermission];
+
+                    const hasPermission = permissions.some(p =>
+                        user.permissions?.includes(p)
+                    );
+
+                    if (!hasPermission) {
+                        console.log('⛔ permiso denegado:', permissions);
+                        this._router.navigate(['/sin-acceso']);
+                        return false;
+                    }
+                }
+
+                // --------------------------
+                // VALIDAR ROLES
+                // --------------------------
+
+                if (requiredRole) {
+
+                    const roles = Array.isArray(requiredRole)
+                        ? requiredRole
+                        : [requiredRole];
+
+                    const hasRole = roles.some(r =>
+                        user.roles?.includes(r)
+                    );
+
+                    if (!hasRole) {
+                        console.log('⛔ rol denegado:', roles);
+                        this._router.navigate(['/sin-acceso']);
+                        return false;
+                    }
+                }
+
+                return true;
+
+            })
+        );
+    }
+}

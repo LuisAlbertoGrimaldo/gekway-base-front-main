@@ -1,22 +1,62 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { AuthUtils } from 'app/core/auth/auth.utils';
+
+import { BehaviorSubject, catchError, Observable, of, switchMap, throwError } from 'rxjs';
+
+import { jwtDecode } from 'jwt-decode';
+
 import { UserService } from 'app/core/user/user.service';
-import { catchError, Observable, of, switchMap, throwError } from 'rxjs';
+import { PermissionService } from './permission.service';
+import { NavigationBuilderService } from 'app/core/navigation/navigation-builder.service';
+import { AuthUtils } from './auth.utils';
+import { filter, take } from 'rxjs';
+
+import { environment } from 'environments/environment';
+
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-    private _authenticated: boolean = false;
+
     private _httpClient = inject(HttpClient);
     private _userService = inject(UserService);
+    private _permissionService = inject(PermissionService);
+    private _navigationBuilder = inject(NavigationBuilderService);
 
-    // -----------------------------------------------------------------------------------------------------
-    // @ Accessors
-    // -----------------------------------------------------------------------------------------------------
+    private _authenticated = false;
 
-    /**
-     * Setter & getter for access token
-     */
+    private refreshTimer: any;
+
+    private refreshing = false;
+    private refreshTokenSubject: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
+    private authChannel = new BroadcastChannel('auth_channel');
+
+    // ------------------------------------------------
+    // ACCESS TOKEN
+    // ------------------------------------------------
+
+    constructor() {
+
+    this.authChannel.onmessage = (event) => {
+
+        const data = event.data;
+
+        if (data.type === 'TOKEN_REFRESHED') {
+
+            localStorage.setItem('accessToken', data.token);
+
+        }
+
+        if (data.type === 'LOGOUT') {
+
+            // logout remoto (no volver a emitir evento)
+            this.signOut(false).subscribe();
+
+        }
+
+    };
+
+}
+
     set accessToken(token: string) {
         localStorage.setItem('accessToken', token);
     }
@@ -25,154 +65,295 @@ export class AuthService {
         return localStorage.getItem('accessToken') ?? '';
     }
 
-    // -----------------------------------------------------------------------------------------------------
-    // @ Public methods
-    // -----------------------------------------------------------------------------------------------------
+    // ------------------------------------------------
+    // REFRESH TOKEN
+    // ------------------------------------------------
 
-    /**
-     * Forgot password
-     *
-     * @param email
-     */
-    forgotPassword(email: string): Observable<any> {
-        return this._httpClient.post('api/auth/forgot-password', email);
+    set refreshToken(token: string) {
+        localStorage.setItem('refreshToken', token);
     }
 
-    /**
-     * Reset password
-     *
-     * @param password
-     */
-    resetPassword(password: string): Observable<any> {
-        return this._httpClient.post('api/auth/reset-password', password);
+    get refreshToken(): string {
+        return localStorage.getItem('refreshToken') ?? '';
     }
 
-    /**
-     * Sign in
-     *
-     * @param credentials
-     */
+    // ------------------------------------------------
+    // LOGIN
+    // ------------------------------------------------
+
     signIn(credentials: { email: string; password: string }): Observable<any> {
-        // Throw error, if the user is already logged in
-        if (this._authenticated) {
-            return throwError('User is already logged in.');
-        }
 
-        return this._httpClient.post('api/auth/sign-in', credentials).pipe(
+        const payload = {
+            correo: credentials.email,
+            password: credentials.password
+        };
+
+        return this._httpClient.post(`${environment.apiUrlHost}/auth/sign-in`, payload).pipe(
+
             switchMap((response: any) => {
-                // Store the access token in the local storage
-                this.accessToken = response.accessToken;
 
-                // Set the authenticated flag to true
+                this.accessToken = response.accessToken;
+                this.refreshToken = response.refreshToken;
+
+                const jwt: any = jwtDecode(response.accessToken);
+
+                this._permissionService.loadSession({
+                    permissions: jwt.permissions || [],
+                    modules: [],
+                    superAdmin: jwt.superAdmin,
+                    empresaId: jwt.empresaId
+                });
+
+                this._userService.user = jwt;
+
                 this._authenticated = true;
 
-                // Store the user on the user service
-                this._userService.user = response.user;
+                this._navigationBuilder.refreshNavigation();
 
-                // Return a new observable with the response
+                this.startTokenTimer();
+
                 return of(response);
             })
         );
     }
 
-    /**
-     * Sign in using the access token
-     */
-    signInUsingToken(): Observable<any> {
-        // Sign in using the token
-        return this._httpClient
-            .post('api/auth/sign-in-with-token', {
-                accessToken: this.accessToken,
-            })
-            .pipe(
-                catchError(() =>
-                    // Return false
-                    of(false)
-                ),
-                switchMap((response: any) => {
-                    // Replace the access token with the new one if it's available on
-                    // the response object.
-                    //
-                    // This is an added optional step for better security. Once you sign
-                    // in using the token, you should generate a new one on the server
-                    // side and attach it to the response object. Then the following
-                    // piece of code can replace the token with the refreshed one.
-                    if (response.accessToken) {
-                        this.accessToken = response.accessToken;
-                    }
+    // ------------------------------------------------
+    // REFRESH TOKEN
+    // ------------------------------------------------
 
-                    // Set the authenticated flag to true
-                    this._authenticated = true;
+    refresh(): Observable<any> {
 
-                    // Store the user on the user service
-                    this._userService.user = response.user;
-
-                    // Return true
-                    return of(true);
-                })
-            );
+    if (!this.refreshToken) {
+        return throwError(() => 'No refresh token');
     }
 
-    /**
-     * Sign out
-     */
-    signOut(): Observable<any> {
-        // Remove the access token from the local storage
-        localStorage.removeItem('accessToken');
+    // si ya hay un refresh en curso, esperar el resultado
+    if (this.refreshing) {
 
-        // Set the authenticated flag to false
+        return this.refreshTokenSubject.pipe(
+            filter(token => token !== null),
+            take(1),
+            switchMap(token => of(token))
+        );
+    }
+
+    this.refreshing = true;
+    this.refreshTokenSubject.next(null);
+
+    return this._httpClient.post(`${environment.apiUrlHost}/auth/sign-in-with-token`, {
+        refreshToken: this.refreshToken
+    }).pipe(
+
+        switchMap((response: any) => {
+
+            const newToken = response.accessToken;
+
+            // guardar token
+            this.accessToken = newToken;
+
+            // liberar estado refresh primero
+            this.refreshing = false;
+
+            // liberar cola de requests
+            this.refreshTokenSubject.next(newToken);
+
+            // avisar a otras pestañas
+            this.authChannel.postMessage({
+                type: 'TOKEN_REFRESHED',
+                token: newToken
+            });
+
+            const jwt: any = jwtDecode(newToken);
+
+            this._permissionService.loadSession({
+                permissions: jwt.permissions || [],
+                modules: [],
+                superAdmin: jwt.superAdmin,
+                empresaId: jwt.empresaId
+            });
+
+            this._navigationBuilder.refreshNavigation();
+
+            this.startTokenTimer();
+
+            return of(response);
+
+        }),
+
+        catchError(err => {
+
+            this.refreshing = false;
+
+            this.signOut();
+
+            return throwError(() => err);
+
+        })
+    );
+}
+
+    // ------------------------------------------------
+    // AUTO LOGIN
+    // ------------------------------------------------
+
+    signInUsingToken(): Observable<boolean> {
+
+        const token = this.accessToken;
+
+        if (!token) {
+            return of(false);
+        }
+
+        if (AuthUtils.isTokenExpired(token)) {
+            return of(false);
+        }
+
+        try {
+
+            const jwt: any = jwtDecode(token);
+
+            this._permissionService.loadSession({
+                permissions: jwt.permissions || [],
+                modules: [],
+                superAdmin: jwt.superAdmin,
+                empresaId: jwt.empresaId
+            });
+
+            this._userService.user = jwt;
+
+            this._authenticated = true;
+
+            this._navigationBuilder.refreshNavigation();
+
+            this.startTokenTimer();
+
+            return of(true);
+
+        } catch {
+
+            return of(false);
+
+        }
+
+    }
+
+    // ------------------------------------------------
+    // TOKEN TIMER
+    // ------------------------------------------------
+
+    startTokenTimer() {
+
+        const token = this.accessToken;
+
+        if (!token) return;
+
+        const jwt: any = jwtDecode(token);
+
+        const expires = jwt.exp * 1000;
+
+        const timeout = expires - Date.now() - 60000;
+
+        clearTimeout(this.refreshTimer);
+
+        if (timeout <= 0) {
+
+            this.refresh().subscribe({
+                next: () => this.startTokenTimer(),
+                error: () => this.signOut()
+            });
+
+            return;
+        }
+
+        this.refreshTimer = setTimeout(() => {
+
+            this.refresh().subscribe({
+                next: () => this.startTokenTimer(),
+                error: () => this.signOut()
+            });
+
+        }, timeout);
+
+    }
+
+    // ------------------------------------------------
+    // LOGOUT
+    // ------------------------------------------------
+
+    signOut(broadcast: boolean = true): Observable<any> {
+
+        clearTimeout(this.refreshTimer);
+
+        this.refreshing = false;
+
+        this.refreshTokenSubject.next(null);
+
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+
+        // solo avisar si el logout se originó aquí
+        if (broadcast) {
+            this.authChannel.postMessage({
+                type: 'LOGOUT'
+            });
+        }
+
+        this._permissionService.clear();
+
         this._authenticated = false;
 
-        // Return the observable
         return of(true);
     }
 
-    /**
-     * Sign up
-     *
-     * @param user
-     */
-    signUp(user: {
-        name: string;
-        email: string;
-        password: string;
-        company: string;
-    }): Observable<any> {
-        return this._httpClient.post('api/auth/sign-up', user);
-    }
+    // ------------------------------------------------
+    // CHECK AUTH
+    // ------------------------------------------------
 
-    /**
-     * Unlock session
-     *
-     * @param credentials
-     */
-    unlockSession(credentials: {
-        email: string;
-        password: string;
-    }): Observable<any> {
-        return this._httpClient.post('api/auth/unlock-session', credentials);
-    }
-
-    /**
-     * Check the authentication status
-     */
     check(): Observable<boolean> {
-        // Check if the user is logged in
+
         if (this._authenticated) {
             return of(true);
         }
 
-        // Check the access token availability
-        if (!this.accessToken) {
+        const token = this.accessToken;
+
+        if (!token) {
             return of(false);
         }
 
-        // Check the access token expire date
-        if (AuthUtils.isTokenExpired(this.accessToken)) {
-            return of(false);
+        if (AuthUtils.isTokenExpired(token)) {
+
+            if (!this.refreshToken) {
+                return of(false);
+            }
+
+            return this.refresh().pipe(
+                switchMap(() => of(true)),
+                catchError(() => of(false))
+            );
         }
 
-        // If the access token exists, and it didn't expire, sign in using it
         return this.signInUsingToken();
     }
+
+    // ------------------------------------------------
+    // MÉTODOS FUSE
+    // ------------------------------------------------
+
+    forgotPassword(email: string): Observable<any> {
+        return this._httpClient.post('api/auth/forgot-password', { email });
+    }
+
+    resetPassword(password: string): Observable<any> {
+        return this._httpClient.post('api/auth/reset-password', { password });
+    }
+
+    signUp(user: any): Observable<any> {
+        return this._httpClient.post('api/auth/sign-up', user);
+    }
+
+    unlockSession(credentials: any): Observable<any> {
+        return this._httpClient.post('api/auth/unlock-session', credentials);
+    }
+
 }

@@ -1,84 +1,88 @@
 import { Injectable } from '@angular/core';
+import { JwtHelperService } from '@auth0/angular-jwt';
 
-@Injectable({ providedIn: 'root' })
+@Injectable({
+  providedIn: 'root'
+})
 export class PermissionService {
 
-  private _permissions = new Set<string>();
-  private _modules = new Set<string>();
-  private _isSuperAdmin = false;
-  private _empresaId?: number;
+  permisos: string[] = [];
+  modulos: string[] = [];
+  superAdmin = false;
+  empresaId: number | null = null;
 
-  // =============================
-  // CARGA DESDE BACKEND
-  // =============================
-  loadSession(data: {
-    permisos: string[];
-    modulos: string[];
-    esSuperAdmin: boolean;
-    empresaId: number;
-  }): void {
-    this._permissions = new Set(data.permisos);
-    this._modules = new Set(data.modulos);
-    this._isSuperAdmin = data.esSuperAdmin;
-    this._empresaId = data.empresaId;
+  constructor() {
+    this.cargarSesion();
+  }
+
+  // 🔹 usado cuando inicia la app
+  cargarSesion(): void {
+
+    const token = localStorage.getItem('accessToken');
+
+    if (!token) return;
+
+    const helper = new JwtHelperService();
+    const decoded: any = helper.decodeToken(token);
+
+    this.permisos = decoded.permissions || [];
+    this.modulos = decoded.modules || [];
+    this.superAdmin = decoded.superAdmin === true;
 
     console.log('🔐 sesión cargada', {
-      permisos: this.getAllPermissions(),
-      modulos: this.getAllModules(),
-      superAdmin: this._isSuperAdmin
+      permisos: this.permisos,
+      modulos: this.modulos,
+      superAdmin: this.superAdmin
     });
   }
 
-  // =============================
-  // SUPER ADMIN
-  // =============================
-  isSuperAdmin(): boolean {
-    return this._isSuperAdmin;
+  // 🔹 usado por AuthService después de login
+  loadSession(data: any): void {
+
+    this.permisos = data.permissions || [];
+    this.modulos = data.modules || [];
+    this.superAdmin = data.superAdmin === true;
+    this.empresaId = data.empresaId || null;
+
+    console.log('🔐 sesión actualizada', {
+      permisos: this.permisos,
+      modulos: this.modulos,
+      superAdmin: this.superAdmin
+    });
   }
 
-  // =============================
-  // PERMISOS
-  // =============================
-  has(permission: string): boolean {
-    if (this._isSuperAdmin) return true;
-    return this._permissions.has(permission);
-  }
-
-  hasAny(perms: string[]): boolean {
-    if (this._isSuperAdmin) return true;
-    return perms.some(p => this._permissions.has(p));
-  }
-
-  hasAll(perms: string[]): boolean {
-    if (this._isSuperAdmin) return true;
-    return perms.every(p => this._permissions.has(p));
-  }
-
-  getAllPermissions(): string[] {
-    return Array.from(this._permissions);
-  }
-
-  // =============================
-  // MÓDULOS (MUY IMPORTANTE)
-  // =============================
-  hasModule(moduleCode: string): boolean {
-    if (this._isSuperAdmin) return true;
-    return this._modules.has(moduleCode);
-  }
-
-  getAllModules(): string[] {
-    return Array.from(this._modules);
-  }
-
-  // =============================
-  // LIMPIEZA
-  // =============================
+  // 🔹 usado en logout
   clear(): void {
-    this._permissions.clear();
-    this._modules.clear();
-    this._isSuperAdmin = false;
-    this._empresaId = undefined;
-
-    console.log('🧹 sesión limpiada');
+    this.permisos = [];
+    this.modulos = [];
+    this.superAdmin = false;
   }
+
+  isSuperAdmin(): boolean {
+    return this.superAdmin;
+  }
+  getEmpresaId(): number | null {
+    return this.empresaId;
+  }
+
+  has(permission: string): boolean {
+
+    // 🔥 si es super admin siempre tiene acceso
+    if (this.superAdmin) return true;
+
+    // 🔥 si el backend manda SUPER_ADMIN como permiso
+    if (this.permisos.includes('SUPER_ADMIN')) return true;
+
+    return this.permisos.includes(permission);
+  }
+
+  hasModule(module: string): boolean {
+
+    if (this.superAdmin) return true;
+
+    if (this.permisos.includes('SUPER_ADMIN')) return true;
+
+    return this.modulos.includes(module);
+  }
+
 }
