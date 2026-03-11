@@ -8,9 +8,12 @@ import {
   ElementRef,
   ChangeDetectionStrategy
 } from '@angular/core';
+
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
+
+import { Router } from '@angular/router';
 
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -26,10 +29,9 @@ import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { RoleService } from './role.service';
 import { Role } from './role.types';
 import { NotificationService } from 'app/core/services/notification.service';
-import { RoleDialogComponent } from './role-dialog.component';
+import { RolDialogComponent } from './role-dialog.component';
 import { PERMISSIONS } from 'app/core/auth/guards/permissions';
 import { HasPermissionDirective } from 'app/core/auth/has-permission.directive';
-
 
 type FiltroKey = 'id' | 'nombre' | 'descripcion';
 
@@ -56,6 +58,7 @@ type FiltroKey = 'id' | 'nombre' | 'descripcion';
   ]
 })
 export class RolesComponent implements OnInit, AfterViewInit {
+
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
@@ -103,6 +106,13 @@ export class RolesComponent implements OnInit, AfterViewInit {
       color: 'warn',
       hasPermission: PERMISSIONS.ROL_DELETE,
       callback: (rol: Role) => this.borrarRol(rol.id)
+    },
+    {
+      label: 'Permisos',
+      icon: 'security',
+      color: 'primary',
+      hasPermission: PERMISSIONS.ROL_EDIT,
+      callback: (rol: Role) => this.verPermisos(rol)
     }
   ];
 
@@ -130,9 +140,10 @@ export class RolesComponent implements OnInit, AfterViewInit {
   private roleService = inject(RoleService);
   private notification = inject(NotificationService);
   private dialog = inject(MatDialog);
+  private router = inject(Router);
 
   // ========================
-  // 🔄 LIFECYCLE
+  // LIFECYCLE
   // ========================
   ngOnInit(): void {
     this.configurarFiltro();
@@ -145,7 +156,7 @@ export class RolesComponent implements OnInit, AfterViewInit {
   }
 
   // ========================
-  // 🔎 FILTROS
+  // FILTROS
   // ========================
   get totalFiltrosActivos(): number {
     return Object.values(this.filtros).filter(v => v?.trim()).length;
@@ -165,7 +176,9 @@ export class RolesComponent implements OnInit, AfterViewInit {
   }
 
   private configurarFiltro(): void {
+
     this.rolesDataSource.filterPredicate = (data: Role) => {
+
       const f = this.filtrosCache;
 
       return (
@@ -173,12 +186,14 @@ export class RolesComponent implements OnInit, AfterViewInit {
         (!f.nombre || data.nombre?.toLowerCase().includes(f.nombre.toLowerCase())) &&
         (!f.descripcion || data.descripcion?.toLowerCase().includes(f.descripcion.toLowerCase()))
       );
+
     };
+
   }
 
   aplicarFiltros(): void {
     this.filtrosCache = { ...this.filtros };
-    this.rolesDataSource.filter = Math.random().toString(); 
+    this.rolesDataSource.filter = Math.random().toString();
   }
 
   aplicarFiltrosDebounce(): void {
@@ -192,19 +207,25 @@ export class RolesComponent implements OnInit, AfterViewInit {
   }
 
   limpiarTodosFiltros(): void {
-    (Object.keys(this.filtros) as FiltroKey[]).forEach(key => (this.filtros[key] = ''));
+
+    (Object.keys(this.filtros) as FiltroKey[])
+      .forEach(key => (this.filtros[key] = ''));
+
     this.aplicarFiltros();
+
   }
 
   // ========================
-  // 📡 DATA
+  // DATA
   // ========================
   private actualizarDataSource(data: Role[]): void {
     this.rolesDataSource.data = [...data];
   }
 
   cargarRoles(): void {
+
     this.loading = true;
+
     this.roleService
       .consulta()
       .pipe(finalize(() => (this.loading = false)))
@@ -212,20 +233,25 @@ export class RolesComponent implements OnInit, AfterViewInit {
         next: data => this.actualizarDataSource(data),
         error: () => this.notification.notifyError('Error al cargar roles')
       });
+
   }
 
   // ========================
-  // 🪟 DIALOGOS
+  // DIALOGOS
   // ========================
   private abrirDialogo(data: Role | null) {
-    return this.dialog.open(RoleDialogComponent, {
+
+    return this.dialog.open(RolDialogComponent, {
       width: '400px',
       data
     }).afterClosed();
+
   }
 
   abrirAltaDialog(): void {
+
     this.abrirDialogo(null).subscribe(result => {
+
       if (!result) return;
 
       this.roleService.alta(result).subscribe({
@@ -235,15 +261,20 @@ export class RolesComponent implements OnInit, AfterViewInit {
         },
         error: () => this.notification.notifyError('Error al crear rol')
       });
+
     });
+
   }
 
   abrirEdicionDialog(rol: Role): void {
+
     this.abrirDialogo({ ...rol }).subscribe(result => {
+
       if (!result) return;
 
       this.roleService.actualizar(result).subscribe({
         next: actualizado => {
+
           this.notification.notifySuccess('Rol actualizado correctamente');
 
           const data = this.rolesDataSource.data.map(r =>
@@ -251,30 +282,39 @@ export class RolesComponent implements OnInit, AfterViewInit {
           );
 
           this.actualizarDataSource(data);
+
         },
         error: () => this.notification.notifyError('Error al actualizar rol')
       });
+
     });
+
   }
 
   borrarRol(id: number): void {
+
     this.roleService.borrar(id).subscribe({
       next: () => {
+
         this.notification.notifySuccess('Rol eliminado correctamente');
 
         const data = this.rolesDataSource.data.filter(r => r.id !== id);
         this.actualizarDataSource(data);
+
       },
       error: () => this.notification.notifyError('Error al eliminar rol')
     });
+
   }
 
   // ========================
-  // 📂 IMPORTAR
+  // IMPORTAR
   // ========================
   onFileSelected(event: Event): void {
+
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
+
     if (!file) return;
 
     const formData = new FormData();
@@ -289,5 +329,20 @@ export class RolesComponent implements OnInit, AfterViewInit {
         this.notification.notifyError(err.error || 'Error al importar roles');
       }
     });
+
   }
+
+  // ========================
+  // PERMISOS
+  // ========================
+  verPermisos(rol: Role): void {
+    this.router.navigate(
+        ['/roles', rol.id, 'permisos'],
+        {
+            state: { rolNombre: rol.nombre }
+        }
+    );
+
+  }
+
 }

@@ -1,0 +1,115 @@
+<div class="flex min-w-0 flex-auto flex-col">
+
+    <div class="flex-auto p-6 sm:p-10">
+
+        <div class="rounded-2xl border-2 border-dashed border-gray-300 h-auto p-6">
+
+            <!-- breadcrumb -->
+
+            <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
+
+                <a routerLink="/usuarios" class="hover:underline cursor-pointer">
+                    Usuarios
+                </a>
+
+                <mat-icon>chevron_right</mat-icon>
+
+                <span class="font-medium">
+                    {{ usuarioNombre }}
+                </span>
+
+                <mat-icon>chevron_right</mat-icon>
+
+                <span>
+                    Roles
+                </span>
+
+            </div>
+
+            <!-- header -->
+
+            <div class="flex items-center justify-between mb-6">
+
+                <div class="flex items-center gap-3">
+
+                    <button mat-icon-button (click)="volver()">
+                        <mat-icon>arrow_back</mat-icon>
+                    </button>
+
+                    <div class="text-xl font-semibold">
+                        Roles del Usuario
+                    </div>
+
+                    <mat-checkbox
+                        [checked]="todosSeleccionados()"
+                        (change)="toggleTodos($event)">
+
+                        Seleccionar todos
+
+                    </mat-checkbox>
+
+                </div>
+
+                <!-- buscador -->
+
+                <mat-form-field appearance="outline" class="w-80">
+
+                    <mat-label>Buscar roles</mat-label>
+
+                    <input
+                        matInput
+                        [(ngModel)]="filtro"
+                        (input)="buscarRoles()">
+
+                </mat-form-field>
+
+            </div>
+
+            <!-- loading -->
+
+            <div *ngIf="loading" class="flex justify-center p-8">
+
+                <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
+
+            </div>
+
+            <!-- lista roles -->
+
+            <div *ngIf="!loading" class="flex flex-col gap-3">
+
+                <div
+                    *ngFor="let rol of roles; trackBy: trackByRol"
+                    class="flex items-center gap-2">
+
+                    <mat-checkbox
+                        [checked]="rol.seleccionado"
+                        [disabled]="rol.loading"
+                        (change)="toggleRol(rol)">
+
+                        {{ rol.nombre }}
+
+                    </mat-checkbox>
+
+                    <mat-progress-spinner
+                        *ngIf="rol.loading"
+                        diameter="16"
+                        mode="indeterminate">
+                    </mat-progress-spinner>
+
+                    <mat-icon
+                        *ngIf="rol.guardado"
+                        class="text-green-600">
+
+                        check_circle
+
+                    </mat-icon>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

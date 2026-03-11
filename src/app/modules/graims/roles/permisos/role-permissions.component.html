@@ -1,0 +1,142 @@
+<div class="flex min-w-0 flex-auto flex-col">
+
+    <div class="flex-auto p-6 sm:p-10">
+
+        <div class="rounded-2xl border-2 border-dashed border-gray-300 h-auto p-6">
+
+            <!-- breadcrumb -->
+
+            <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
+
+                <a routerLink="/roles" class="hover:underline cursor-pointer">
+                    Roles
+                </a>
+
+                <mat-icon>chevron_right</mat-icon>
+
+                <span class="font-medium">
+                    {{ rolNombre }}
+                </span>
+
+                <mat-icon>chevron_right</mat-icon>
+
+                <span>
+                    Permisos
+                </span>
+
+            </div>
+
+
+            <!-- header -->
+
+            <div class="flex items-center justify-between mb-6">
+
+                <div class="flex items-center gap-3">
+
+                    <button mat-icon-button (click)="volver()">
+                        <mat-icon>arrow_back</mat-icon>
+                    </button>
+
+                    <div class="text-xl font-semibold">
+                        Permisos del Rol
+                    </div>
+
+                </div>
+
+                <mat-checkbox [checked]="todosSeleccionados()" (change)="toggleTodos($event)">
+
+                    Seleccionar todos
+
+                </mat-checkbox>
+
+            </div>
+
+
+            <!-- buscador -->
+
+            <mat-form-field appearance="outline" class="w-80 mb-6">
+
+                <mat-label>Buscar permiso</mat-label>
+
+                <input matInput [(ngModel)]="filtro" (input)="buscarPermisos()">
+
+            </mat-form-field>
+
+
+            <!-- loading -->
+
+            <div *ngIf="loading" class="flex justify-center p-8">
+
+                <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
+
+            </div>
+
+
+            <!-- módulos accordion -->
+
+            <mat-accordion *ngIf="!loading">
+
+                <mat-expansion-panel *ngFor="let grupo of permisosAgrupados">
+
+                    <mat-expansion-panel-header>
+
+                        <mat-panel-title>
+
+                            {{ grupo.modulo }}
+
+                            <span class="text-gray-500 text-sm ml-2">
+
+                                ({{ contadorModulo(grupo) }})
+
+                            </span>
+
+                        </mat-panel-title>
+
+                        <mat-panel-description>
+
+                            <mat-checkbox [checked]="moduloCompleto(grupo)" (click)="$event.stopPropagation()"
+                                (change)="toggleModulo(grupo, $event)">
+
+                                Todos
+
+                            </mat-checkbox>
+
+                        </mat-panel-description>
+
+                    </mat-expansion-panel-header>
+
+
+                    <div class="flex flex-col gap-2">
+
+                        <div *ngFor="let permiso of grupo.permisos; trackBy: trackByPermiso"
+                            class="flex items-center gap-2">
+
+                            <mat-checkbox [checked]="permiso.seleccionado" [disabled]="permiso.loading"
+                                (change)="togglePermiso(permiso)">
+
+                                {{ permiso.nombre }}
+
+                            </mat-checkbox>
+
+                            <mat-progress-spinner *ngIf="permiso.loading" diameter="16" mode="indeterminate">
+                            </mat-progress-spinner>
+
+                            <mat-icon *ngIf="permiso.guardado" class="text-green-600">
+
+                                check_circle
+
+                            </mat-icon>
+
+                        </div>
+
+                    </div>
+
+                </mat-expansion-panel>
+
+            </mat-accordion>
+
+        </div>
+
+    </div>
+
+</div>

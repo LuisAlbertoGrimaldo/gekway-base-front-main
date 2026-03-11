@@ -1,101 +1,247 @@
 <div class="flex min-w-0 flex-auto flex-col">
   <div class="flex-auto p-6 sm:p-10">
+
     <div class="rounded-2xl border-2 border-dashed border-gray-300 h-auto">
 
       <!-- ================= HEADER ================= -->
-      <div class="flex justify-between items-center p-4">
-        <div class="flex items-center gap-3">
-          <h2 class="text-xl font-semibold">{{ titulo }}</h2>
 
-          <!-- contador filtros activos -->
-          <span *ngIf="totalFiltrosActivos" class="text-xs bg-primary text-white px-2 py-0.5 rounded-full">
+      <div class="flex justify-between items-center p-4">
+
+        <div class="flex items-center gap-3">
+
+          <h2 class="text-xl font-semibold">
+            {{ titulo }}
+          </h2>
+
+          <!-- contador filtros -->
+
+          <span
+            *ngIf="totalFiltrosActivos"
+            class="text-xs bg-primary text-white px-2 py-0.5 rounded-full">
+
             {{ totalFiltrosActivos }}
+
           </span>
+
         </div>
 
-        <!-- botones header dinámicos -->
         <div class="flex gap-2 flex-wrap sm:flex-nowrap">
+
+          <!-- botones dinamicos -->
+
           <ng-container *ngFor="let accion of accionesHeader">
+
             <button
               mat-stroked-button
               [color]="accion.color || 'primary'"
-              (click)="accion.callback()"
+              (click)="accion.callback?.()"
               [disabled]="accion.disabled?.()"
               *hasPermission="accion.hasPermission"
-              [matTooltip]="accion.label"
-              [class.ml-auto]="accion.alignRight"
-            >
-              <mat-icon>{{ accion.icon }}</mat-icon>
+              [class.ml-auto]="accion.alignRight">
+
+              <mat-icon>
+                {{ accion.icon }}
+              </mat-icon>
+
               {{ accion.label }}
+
             </button>
+
           </ng-container>
 
-          <!-- <input type="file" #fileInput hidden (change)="onFileSelected($event)" accept=".xlsx,.xls" /> -->
+          <!-- boton columnas -->
+
+          <button
+            mat-icon-button
+            [matMenuTriggerFor]="menuColumnas"
+            matTooltip="Columnas visibles">
+
+            <mat-icon>
+              view_column
+            </mat-icon>
+
+          </button>
+
         </div>
+
       </div>
 
-      <!-- ================= TABLA ================= -->
-      <div class="overflow-x-auto p-4">
-        <table mat-table [dataSource]="usuariosDataSource" matSort
-               class="mat-elevation-z8 w-full min-w-[700px] break-words whitespace-normal">
+      <!-- ================= MENU COLUMNAS ================= -->
 
-          <!-- columnas dinámicas -->
-          <ng-container *ngFor="let col of columns" [matColumnDef]="col.key">
-            <th mat-header-cell *matHeaderCellDef [mat-sort-header]="col.key" [class]="'mat-column-' + col.key">
+      <mat-menu #menuColumnas="matMenu">
+
+        <div class="p-3 flex flex-col gap-2">
+
+          <div class="text-sm font-semibold mb-2">
+            Columnas visibles
+          </div>
+
+          <mat-checkbox
+            *ngFor="let col of columns; let i=index"
+            [(ngModel)]="columns[i].visible"
+            name="col{{i}}"
+            (change)="guardarColumnas()">
+
+            {{ col.label }}
+
+          </mat-checkbox>
+
+        </div>
+
+      </mat-menu>
+
+      <!-- ================= TABLA ================= -->
+
+      <div class="overflow-x-auto p-4">
+
+        <table
+          mat-table
+          [dataSource]="usuariosDataSource"
+          matSort
+          class="mat-elevation-z8 w-full min-w-[700px] break-words whitespace-normal">
+
+          <!-- columnas dinamicas -->
+
+          <ng-container
+            *ngFor="let col of columns"
+            [matColumnDef]="col.key">
+
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header>
+
               <div class="flex items-center gap-1">
-                <button mat-icon-button [matMenuTriggerFor]="menuFiltro"
+
+                <button
+                  *ngIf="col.filterable"
+                  mat-icon-button
+                  [matMenuTriggerFor]="menuFiltro"
                   (click)="setColumnaFiltroActiva(col.key); $event.stopPropagation()"
-                  [color]="tieneFiltro(col.key) ? 'primary' : undefined" class="w-6 h-6 min-w-0" *ngIf="col.filterable">
-                  <mat-icon class="text-base">filter_list</mat-icon>
+                  [color]="tieneFiltro(col.key) ? 'primary' : undefined"
+                  class="w-6 h-6 min-w-0">
+
+                  <mat-icon class="text-base">
+                    filter_list
+                  </mat-icon>
+
                 </button>
-                <span>{{ col.label }}</span>
+
+                <span>
+                  {{ col.label }}
+                </span>
+
               </div>
+
             </th>
 
-            <td mat-cell *matCellDef="let rol" [class]="'mat-column-' + col.key">
-              {{ rol[col.key] }}
+            <td mat-cell *matCellDef="let usuario">
+
+              {{ usuario[col.key] }}
+
             </td>
+
           </ng-container>
 
-          <!-- menú filtro reutilizable -->
+          <!-- ================= MENU FILTRO ================= -->
+
           <mat-menu #menuFiltro="matMenu">
+
             <div class="p-3 w-64" (click)="$event.stopPropagation()">
+
               <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Filtrar {{ columnaFiltroActivaLabel }}</mat-label>
-                <input matInput [(ngModel)]="filtros[columnaFiltroActiva]" (keyup)="aplicarFiltrosDebounce()" />
+
+                <mat-label>
+                  Filtrar {{ columnaFiltroActivaLabel }}
+                </mat-label>
+
+                <input
+                  matInput
+                  [(ngModel)]="filtros[columnaFiltroActiva]"
+                  (keyup)="aplicarFiltrosDebounce()">
+
               </mat-form-field>
-              <button mat-button color="warn" class="w-full" (click)="limpiarFiltro(columnaFiltroActiva)">Limpiar</button>
+
+              <button
+                mat-button
+                color="warn"
+                class="w-full"
+                (click)="limpiarFiltro(columnaFiltroActiva)">
+
+                Limpiar
+
+              </button>
+
             </div>
+
           </mat-menu>
 
-          <!-- acciones por fila -->
+          <!-- ================= ACCIONES ================= -->
+
           <ng-container matColumnDef="acciones">
-            <th mat-header-cell *matHeaderCellDef>Acciones</th>
-            <td mat-cell *matCellDef="let usuario" class="mat-column-acciones">
-              <div class="acciones-cell">
-                <ng-container *ngFor="let accion of acciones">
-                  <button
-                    mat-icon-button
-                    [color]="accion.color || 'primary'"
-                    (click)="accion.callback(usuario)"
-                    *hasPermission="accion.hasPermission"
-                    [matTooltip]="accion.label"
-                  >
-                    <mat-icon>{{ accion.icon }}</mat-icon>
-                  </button>
-                </ng-container>
-              </div>
+
+            <th mat-header-cell *matHeaderCellDef>
+              Acciones
+            </th>
+
+            <td mat-cell *matCellDef="let usuario">
+
+              <button
+                mat-icon-button
+                color="primary"
+                (click)="abrirEdicionDialog(usuario)">
+
+                <mat-icon>
+                  edit
+                </mat-icon>
+
+              </button>
+
+              <button
+                mat-icon-button
+                color="warn"
+                (click)="borrarUsuario(usuario.id!)">
+
+                <mat-icon>
+                  delete
+                </mat-icon>
+
+              </button>
+
+              <button
+                mat-icon-button
+                color="primary"
+                (click)="verRoles(usuario)">
+
+                <mat-icon>
+                  security
+                </mat-icon>
+
+              </button>
+
             </td>
+
           </ng-container>
 
           <!-- filas -->
+
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+
           <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
         </table>
 
-        <!-- paginador -->
-        <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+        <!-- ================= PAGINADOR ================= -->
+
+        <mat-paginator
+          [pageSizeOptions]="[5,10,20]"
+          showFirstLastButtons>
+
+        </mat-paginator>
+
       </div>
+
     </div>
+
   </div>
 </div>

@@ -1,54 +1,59 @@
-<h2 mat-dialog-title>{{ isEditMode ? 'Editar Permiso' : 'Alta Permiso' }}</h2>
+<h2 mat-dialog-title>
+  {{ isEditMode ? 'Editar Empresa' : 'Alta Empresa' }}
+</h2>
 
 <div mat-dialog-content>
+
   <form [formGroup]="form" (ngSubmit)="guardar()">
-    <!-- Nombre del permiso -->
+
+    <!-- Nombre -->
+
     <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Nombre del Permiso</mat-label>
-      <input matInput formControlName="nombre" required />
+
+      <mat-label>Nombre</mat-label>
+
+      <input
+        matInput
+        formControlName="nombre"
+        required
+      />
+
       <mat-error *ngIf="form.get('nombre')?.hasError('required')">
         El nombre es obligatorio
       </mat-error>
-      <mat-error *ngIf="!form.get('nombre')?.hasError('required') && form.get('nombre')?.hasError('whitespace')">
+
+      <mat-error *ngIf="form.get('nombre')?.hasError('whitespace')">
         El nombre no puede ser solo espacios
       </mat-error>
-      <mat-error *ngIf="!form.get('nombre')?.hasError('required') && form.get('nombre')?.hasError('invalidChars')">
-        El nombre solo puede contener letras y espacios
-      </mat-error>
-    </mat-form-field>
 
-    <!-- Código del permiso -->
-    <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Código</mat-label>
-      <input matInput formControlName="codigo" required />
-      <mat-error *ngIf="form.get('codigo')?.hasError('required')">
-        El código es obligatorio
-      </mat-error>
-      <mat-error *ngIf="!form.get('codigo')?.hasError('required') && form.get('codigo')?.hasError('whitespace')">
-        El código no puede ser solo espacios
-      </mat-error>
-      <mat-error *ngIf="!form.get('codigo')?.hasError('required') && form.get('codigo')?.hasError('invalidChars')">
-        El código solo puede contener letras, números y guiones bajos
-      </mat-error>
-    </mat-form-field>
-
-    <!-- Selección de módulo -->
-    <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Módulo</mat-label>
-      <mat-select formControlName="moduloId" required>
-        <mat-option *ngFor="let modulo of modulos" [value]="modulo.id">
-          {{ modulo.nombre }}
-        </mat-option>
-      </mat-select>
-      <mat-error *ngIf="form.get('moduloId')?.hasError('required')">
-        Debe seleccionar un módulo
-      </mat-error>
     </mat-form-field>
 
     <!-- Botones -->
+
     <div class="flex items-center justify-end gap-x-3 mt-6">
-      <button mat-stroked-button color="primary" type="button" (click)="cancelar()">Cancelar</button>
-      <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid">Guardar</button>
+
+      <button
+        mat-stroked-button
+        color="primary"
+        type="button"
+        (click)="cancelar()">
+
+        Cancelar
+
+      </button>
+
+      <button
+        mat-raised-button
+        color="primary"
+        type="submit"
+        [disabled]="form.invalid">
+
+        Guardar
+
+      </button>
+
     </div>
+
   </form>
+
 </div>

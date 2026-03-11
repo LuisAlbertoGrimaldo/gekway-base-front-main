@@ -18,4 +18,20 @@ export class RoleService {
     borrar(id: number): Observable<void> { return this.api.delete<void>(`${this.baseUrl}/delete/${id}`); }
     importarExcel(formData: FormData): Observable<void> { return this.api.post<void>(`${this.baseUrl}/importar`, formData); }
 
+   consultaPermisosRol(rolId: number) {
+    return this.api.get(`${this.baseUrl}/${rolId}/rolesPermiso`);
+}
+
+   agregarPermiso(rolId: number, permisoId: number): Observable<any> {
+    return this.api.post(`${this.baseUrl}/${rolId}/rolesPermiso/${permisoId}`, {});
+}
+
+quitarPermiso(rolId: number, permisoId: number): Observable<any> {
+    return this.api.delete(`${this.baseUrl}/${rolId}/rolesPermiso/${permisoId}`);
+}
+
+
+
+
+
 }
